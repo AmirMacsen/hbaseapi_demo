@@ -1,8 +1,10 @@
 package org.example.calllog;
 
+import com.amir.hbase.util.CallLogOuterClass;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
@@ -231,15 +233,200 @@ public class CallLogDemo {
         put.addColumn(Bytes.toBytes("basic"), Bytes.toBytes("length"), Bytes.toBytes(100));
         table.put(put);
     }
+
+    /**
+     * 客户端过滤器
+     * 过滤出type=0的数据
+     */
+    public static void findByKeyMethodShow() throws IOException {
+        Scan scan = new Scan();
+        // 添加过滤器
+        // 声明多个过滤器之间的关系，默认为and关系
+        FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+
+        SingleColumnValueFilter filter = new SingleColumnValueFilter(
+                Bytes.toBytes("basic"),
+                Bytes.toBytes("type"),
+                CompareOperator.EQUAL,
+                Bytes.toBytes(0)
+        );
+        filterList.addFilter(filter);
+        scan.setFilter(filterList);
+        ResultScanner resultScanner = table.getScanner(scan);
+        for(Result result:resultScanner){
+            Cell[] cells = result.rawCells();
+            String rowInfo = "rowkey:"+Bytes.toString(CellUtil.cloneRow(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[0]))
+                    +":"+Bytes.toString(CellUtil.cloneValue(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[1]))
+                    +":"+Bytes.toString(CellUtil.cloneValue(cells[1]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[2]))
+                    +":"+Bytes.toInt(CellUtil.cloneValue(cells[2]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[3]))
+                    +":"+Bytes.toInt(CellUtil.cloneValue(cells[3]));
+            System.out.println(rowInfo);
+        }
+    }
+
+    /**
+     * 列族过滤器，比较少用，因为有其他手段
+     */
+    public static void findByFamilyFilter() throws IOException {
+        Scan scan = new Scan();
+        // 添加过滤器
+        // 声明多个过滤器之间的关系，默认为and关系
+        FilterList filter = new FilterList(FilterList.Operator.MUST_PASS_ONE);
+        BinaryComparator binaryComparator = new BinaryComparator(Bytes.toBytes("basic"));
+        FamilyFilter familyFilter = new FamilyFilter(CompareOperator.EQUAL, binaryComparator);
+        filter.addFilter(familyFilter);
+        scan.setFilter(filter);
+        ResultScanner resultScanner = table.getScanner(scan);
+        for(Result result:resultScanner){
+            Cell[] cells = result.rawCells();
+            String rowInfo = "rowkey:"+Bytes.toString(CellUtil.cloneRow(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[0]))
+                    +":"+Bytes.toString(CellUtil.cloneValue(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[1]))
+                    +":"+Bytes.toString(CellUtil.cloneValue(cells[1]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[2]))
+                    +":"+Bytes.toInt(CellUtil.cloneValue(cells[2]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[3]))
+                    +":"+Bytes.toInt(CellUtil.cloneValue(cells[3]));
+            System.out.println(rowInfo);
+        }
+    }
+
+    /**
+     * rowkey过滤器
+     */
+    public static void rowKeyFilter() throws IOException {
+        Scan scan = new Scan();
+        // 添加过滤器
+        // 声明多个过滤器之间的关系，默认为and关系
+        FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        PrefixFilter prefixFilter = new PrefixFilter(Bytes.toBytes("18661990012"));
+        filterList.addFilter(prefixFilter);
+        scan.setFilter(filterList);
+        ResultScanner resultScanner = table.getScanner(scan);
+        for(Result result:resultScanner){
+            Cell[] cells = result.rawCells();
+            String rowInfo = "rowkey:"+Bytes.toString(CellUtil.cloneRow(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[0]));
+            rowInfo +=":"+Bytes.toString(CellUtil.cloneValue(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[1]));
+            rowInfo +=":"+Bytes.toString(CellUtil.cloneValue(cells[1]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[2]));
+            rowInfo +=":"+Bytes.toInt(CellUtil.cloneValue(cells[2]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[3]));
+            rowInfo +=":"+Bytes.toInt(CellUtil.cloneValue(cells[3]));
+            System.out.println(rowInfo);
+        }
+
+    }
+
+    /**
+     * 多种过滤器组合查询
+     */
+    public static void composeFilter () throws IOException {
+        Scan scan = new Scan();
+        // 添加过滤器
+        // 声明多个过滤器之间的关系，默认为and关系
+        FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        SingleColumnValueFilter filter = new SingleColumnValueFilter(
+                Bytes.toBytes("basic"),
+                Bytes.toBytes("type"),
+                CompareOperator.EQUAL,
+                Bytes.toBytes(0)
+        );
+        filterList.addFilter(filter);
+        PrefixFilter prefixFilter = new PrefixFilter(Bytes.toBytes("18661990012"));
+        filterList.addFilter(prefixFilter);
+        scan.setFilter(filterList);
+        ResultScanner resultScanner = table.getScanner(scan);
+        for(Result result:resultScanner){
+            Cell[] cells = result.rawCells();
+            String rowInfo = "rowkey:"+Bytes.toString(CellUtil.cloneRow(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[0]));
+            rowInfo +=":"+Bytes.toString(CellUtil.cloneValue(cells[0]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[1]));
+            rowInfo +=":"+Bytes.toString(CellUtil.cloneValue(cells[1]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[2]));
+            rowInfo +=":"+Bytes.toInt(CellUtil.cloneValue(cells[2]));
+            rowInfo +=","+Bytes.toString(CellUtil.cloneQualifier(cells[3]));
+            rowInfo +=":"+Bytes.toInt(CellUtil.cloneValue(cells[3]));
+            System.out.println(rowInfo);
+        }
+
+    }
+
+    public static void insertProtocolBuffer() throws Exception {
+        Random random = new Random();
+        List<Put> puts = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            // 清理表格
+            puts.clear();
+            // 生成rowkey 手机号码
+            String phoneNumber = getPhoneNumber("186");
+            System.out.println("rowkey:" + phoneNumber);
+            for (int j = 0; j < 10000; j++) {
+                String dnum = getPhoneNumber("199");
+                int length = random.nextInt(200) + 1;
+                int type = random.nextInt(2);
+                String date = getDate(2024);
+                // rowKey的设计
+                String rowkey = phoneNumber + "_" + (Long.MAX_VALUE - sdf.parse(date).getTime() + i +j);
+                Put put = new Put(rowkey.getBytes());
+                CallLogOuterClass.CallLog.Builder builder = CallLogOuterClass.CallLog.newBuilder();
+                builder.setDnum(dnum);
+                builder.setLength(length);
+                builder.setType(type);
+                builder.setDate(date);
+                // 通过builder构建一个protobuf对象
+                CallLogOuterClass.CallLog callLog = builder.build();
+                put.addColumn(Bytes.toBytes("basic"), Bytes.toBytes("dnum"),callLog.toByteArray());
+                puts.add(put);
+            }
+            // 提交数据
+            table.put(puts);
+        }
+    }
+
+    public static void scanBufferData() throws Exception{
+        Scan scan = new Scan();
+        String rowkey = "18640455510";
+        String startRow = rowkey + "_" +
+                (Long.MAX_VALUE-sdf.parse("2024-04-01 00:00:00").getTime());
+        String stopRow = rowkey + "_" +
+                (Long.MAX_VALUE-sdf.parse("2024-03-01 00:00:00").getTime());
+        scan.withStartRow(Bytes.toBytes(startRow));
+        scan.withStopRow(Bytes.toBytes(stopRow), true);
+        ResultScanner resultScanner = table.getScanner(scan);
+        for(Result result:resultScanner){
+            Cell[] cells = result.rawCells();
+            String rowInfo = "rowkey:"+Bytes.toString(CellUtil.cloneRow(cells[0]));
+            byte[] value = CellUtil.cloneValue(cells[0]);
+            CallLogOuterClass.CallLog callLog = CallLogOuterClass.CallLog.parseFrom(value);
+            rowInfo +=","+callLog.getDnum();
+            rowInfo +=","+callLog.getLength();
+            rowInfo +=","+callLog.getType();
+            rowInfo +=","+callLog.getDate();
+            System.out.println(rowInfo);
+        }
+    }
     public static void main(String[] args) throws IOException {
         try {
             CallLogDemo.init();
 //            String[] columnFamilies = {"basic"};
 //            CallLogDemo.createTable(columnFamilies);
-//            CallLogDemo.insertData();
-            scanData();
+//            CallLogDemo.insertProtocolBuffer();
+//            scanData();
 //            deleteRowCell();
 //            insertRowCell();
+//            findByKeyMethodShow();
+//            findByFamilyFilter();
+//            rowKeyFilter();
+//            composeFilter();
+            scanBufferData();
         }  catch (Exception e){
             throw new RuntimeException(e);
         } finally {
